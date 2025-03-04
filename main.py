@@ -1,9 +1,82 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.stats import pointbiserialr
+import seaborn as sns
 
 
 FILE_PATH = "Employee_Survey_Results.xlsx"
+
+def visualize_point_biserial(df):
+    # Calculate point-biserial correlations for each continuous variable
+    point_biserial_results = {}
+    for col in ['strong_passwords', 'team_expectation', 'phishing_confidence', 'training_hours']:
+        corr, p_value = pointbiserialr(df['clicked_suspicious_link'], df[col])
+        point_biserial_results[col] = {'Correlation': corr, 'p-value': p_value}
+
+    # Extract correlation coefficients for visualization
+    correlations = [result['Correlation'] for result in point_biserial_results.values()]
+    variables = list(point_biserial_results.keys())
+
+    # Box Plots for Each Continuous Variable (split by binary outcome)
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    sns.boxplot(x='clicked_suspicious_link', y='strong_passwords', data=df, ax=axes[0, 0], palette='coolwarm', legend=False)
+    axes[0, 0].set_title('Strong Passwords vs Clicked Link')
+    sns.boxplot(x='clicked_suspicious_link', y='team_expectation', data=df, ax=axes[0, 1], palette='coolwarm', legend=False)
+    axes[0, 1].set_title('Team Expectation vs Clicked Link')
+    sns.boxplot(x='clicked_suspicious_link', y='phishing_confidence', data=df, ax=axes[1, 0], palette='coolwarm', legend=False)
+    axes[1, 0].set_title('Phishing Confidence vs Clicked Link')
+    sns.boxplot(x='clicked_suspicious_link', y='training_hours', data=df, ax=axes[1, 1], palette='coolwarm', legend=False)
+    axes[1, 1].set_title('Training Hours vs Clicked Link')
+    plt.tight_layout()
+    plt.show()
+
+def analyze_correlations(df):
+    """
+    Analyzes correlations in the provided DataFrame and prints results in a formatted way.
+    
+    Args:
+        df (pd.DataFrame): Preprocessed DataFrame with columns:
+            - 'strong_passwords'
+            - 'team_expectation'
+            - 'phishing_confidence'
+            - 'clicked_suspicious_link' (bool)
+            - 'training_hours'
+    """
+    # Descriptive statistics for continuous variables
+    total = len(df)
+    num_passed = df['passed_phishing_test'].sum()
+    descriptive_stats = df[['strong_passwords', 'team_expectation', 'phishing_confidence', 'training_hours']].describe()
+
+    # Percentage of Yes/No for the binary column
+    clicked_counts = df['clicked_suspicious_link'].value_counts(normalize=True) * 100
+
+    # Point-biserial correlations for binary column against continuous variables
+    point_biserial_results = {}
+    for col in ['strong_passwords', 'team_expectation', 'phishing_confidence', 'training_hours']:
+        corr, p_value = pointbiserialr(df['clicked_suspicious_link'], df[col])
+        point_biserial_results[col] = {'Correlation': corr, 'p-value': p_value}
+
+    # Print results in a formatted way
+    print(
+        "Employee Survey Results (Point-Biserial):\n"
+        "\n"
+        "   Strong Passwords:\n"
+        f"      Point-Biserial r-value:{point_biserial_results['strong_passwords']['Correlation']:.2f}\n"
+        f"      p-value:               {point_biserial_results['strong_passwords']['p-value']:.3e}\n"
+        "\n"
+        "   Team Expectation:\n"
+        f"      Point-Biserial r-value:{point_biserial_results['team_expectation']['Correlation']:.2f}\n"
+        f"      p-value:               {point_biserial_results['team_expectation']['p-value']:.3e}\n"
+        "\n"
+        "   Phishing Confidence:\n"
+        f"      Point-Biserial r-value:{point_biserial_results['phishing_confidence']['Correlation']:.2f}\n"
+        f"      p-value:               {point_biserial_results['phishing_confidence']['p-value']:.3e}\n"
+        "\n"
+        "   Training Hours:\n"
+        f"      Point-Biserial r-value:{point_biserial_results['training_hours']['Correlation']:.2f}\n"
+        f"      p-value:               {point_biserial_results['training_hours']['p-value']:.3e}\n"
+    )
 
 def calculate_basic_stats(df):
     total = len(df)
@@ -83,7 +156,11 @@ if __name__ == "__main__":
     df["passed_phishing_test"] = df["clicked_suspicious_link"] != True
     # Show the basic statistics
     calculate_basic_stats(df)
+    #Show stats for point-biserial correlations
+    analyze_correlations(df)
     # Show the group means
     group_by_results(df)
     # Visualize the relationships
     visualize_relationships(df)
+    #Point biserial based visualizations
+    visualize_point_biserial(df)
