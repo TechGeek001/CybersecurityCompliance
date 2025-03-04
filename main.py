@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.stats import pointbiserialr
 
 
 FILE_PATH = "Employee_Survey_Results.xlsx"
@@ -63,6 +64,41 @@ def visualize_relationships(df):
     plt.show()
 
 
+def plot_point_biserial(df):
+    # List of metrics to analyze
+    metrics = ['strong_passwords', 'team_expectation', 'phishing_confidence', 'training_hours']
+    
+    # Dictionary to store point biserial correlation results
+    pbi_results = {}
+    
+    # Calculate point biserial correlation for each metric with respect to passed_phishing_test
+    # (Convert the boolean to integer: True -> 1, False -> 0)
+    for metric in metrics:
+        r, p_value = pointbiserialr(df['passed_phishing_test'].astype(int), df[metric])
+        pbi_results[metric] = (r, p_value)
+    
+    # Convert the results into a DataFrame
+    pbi_df = pd.DataFrame.from_dict(pbi_results, orient='index', columns=['r_value', 'p_value'])
+    print("Point Biserial Correlations:")
+    print(pbi_df)
+    
+    # Plot the point biserial correlation coefficients as a bar chart
+    plt.figure(figsize=(8,5))
+    bars = plt.bar(pbi_df.index, pbi_df['r_value'], color='skyblue', edgecolor='black')
+    plt.title('Point Biserial Correlation Coefficients')
+    plt.ylabel('Correlation Coefficient (r)')
+    plt.xlabel('Survey Metrics')
+    plt.axhline(0, color='black', linewidth=0.8)
+    
+    # Annotate each bar with its r value
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2.0, height,
+                 f'{height:.2f}', ha='center', va='bottom' if height >= 0 else 'top')
+    
+    plt.show()
+
+
 if __name__ == "__main__":
     df = pd.read_excel(FILE_PATH)
     # Rename the columns to make them more Pythonic (and easier to type)
@@ -78,12 +114,14 @@ if __name__ == "__main__":
         inplace=True
     )
     # Create the "passed_phishing_test" column; a boolean
-    # Invert the result so that "Yes" is False and "No" is True
     df["clicked_suspicious_link"] = df["clicked_suspicious_link"].replace({"Yes": True, "No": False})
-    df["passed_phishing_test"] = df["clicked_suspicious_link"] != True
+    # Invert the result so that "Yes" is False and "No" is True
+    df["passed_phishing_test"] = ~df["clicked_suspicious_link"]
     # Show the basic statistics
     calculate_basic_stats(df)
     # Show the group means
     group_by_results(df)
     # Visualize the relationships
     visualize_relationships(df)
+    # Plot the point biserial correlation coefficients
+    plot_point_biserial(df)
