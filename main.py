@@ -53,13 +53,13 @@ def visualize_relationships(df):
     plt.figure(figsize=(6,5))
     heatmap = plt.imshow(corr, cmap='coolwarm', interpolation='none', aspect='auto')
     plt.colorbar(heatmap)
-    plt.xticks(range(len(corr)), corr.columns, rotation=45)
-    plt.yticks(range(len(corr)), corr.index)
-    plt.title('Correlation Matrix')
+    plt.xticks(range(len(corr)), corr.columns, rotation=45, fontsize=12)
+    plt.yticks(range(len(corr)), corr.index, fontsize=12)
+    plt.title('Correlation Matrix', fontsize=14)
     # Annotate the heatmap with correlation values
     for (i, j), val in np.ndenumerate(corr):
         plt.text(j, i, f"{val:.2f}", ha='center', va='center', 
-                 color='white' if abs(val) > 0.5 else 'black')
+                 color='white' if abs(val) > 0.5 else 'black', fontsize=24)
     plt.tight_layout()
     plt.show()
 
